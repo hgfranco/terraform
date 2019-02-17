@@ -15,6 +15,6 @@ module "my_ec2" {
   source        = "../modules/ec2"
   ec2_count     = 1
   ami_id        = "${var.ami_id}"
-  instance_type = "t2.micro"
+  instance_type = "${var.instance_type}"
   subnet_id     = "${module.my_vpc.subnet_id}"
 }

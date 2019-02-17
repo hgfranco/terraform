@@ -1,9 +1,3 @@
-# Define AWS profile and region
-provider "aws" {
-  profile = "${var.aws_profile}"
-  region  = "${var.aws_region}"
-}
-
 # Provides a list of subnet IDs for vpc_id
 data "aws_subnet_ids" "vpc_subnets" {
   vpc_id = "${var.vpc_id}"
