@@ -87,3 +87,20 @@ variable "service" {
   description = "Service name"
   default = "nexus"
 }
+
+variable "tcp_ports" {
+  description = "Security group TCP ports"
+  default = "22,80"
+}
+
+variable "udp_ports" {
+  description = "Security group UDP ports"
+  default = "default_null"
+}
+
+variable "cidrs" {
+  type = "list"
+  default = [
+    "0.0.0.0/0"
+  ]
+}
