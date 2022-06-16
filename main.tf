@@ -7,7 +7,7 @@ provider "aws" {
 terraform {
   backend "s3" {
     bucket = "terraform-state"
-    key    = "docker-service/terraform.tfstate"
+    key    = "franco-docker-service/terraform.tfstate"
     region = "us-east-1"
   }
 }
