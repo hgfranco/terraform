@@ -3,12 +3,12 @@ name: 'Terraform'
 on:
   push:
     branches:
-    - trunk
-  pull_request:
+    - master
 
 jobs:
-  publish:
-    environment: CI
+  deployment:
+    # runs-on: ubuntu-latest
+    environment: ci-cd
     terraform:
       name: 'Terraform'
       runs-on: ubuntu-latest
