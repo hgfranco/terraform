@@ -24,7 +24,7 @@ variable "instance_ami_id" {
 
 variable "instance_type" {
   description = "Instance type"
-} 
+}
 
 variable "instance_subnet_id" {
   description = "Instance subnet ID"
@@ -71,5 +71,5 @@ variable "udp_ports" {
 }
 
 variable "cidrs" {
-  type = "list"
+  type = list(string)
 }
