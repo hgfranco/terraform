@@ -29,6 +29,14 @@ resource "aws_instance" "node" {
   associate_public_ip_address = true
   disable_api_termination     = true
 
+  user_data = <<-EOF
+    #cloud-config
+    hostname: ${var.name}-${each.key}
+    manage_etc_hosts: localhost
+  EOF
+
+  user_data_replace_on_change = false
+
   root_block_device {
     volume_size           = var.root_volume_size_gib
     volume_type           = "gp3"
