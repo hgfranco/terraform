@@ -34,3 +34,11 @@ jobs:
 
       - name: Validate configuration
         run: terraform validate -no-color
+
+      - name: Initialize Kubernetes configuration
+        working-directory: environments/kubernetes
+        run: terraform init -backend=false -input=false -lockfile=readonly
+
+      - name: Validate Kubernetes configuration
+        working-directory: environments/kubernetes
+        run: terraform validate -no-color
