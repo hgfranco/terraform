@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# Manage the three Kubernetes EC2 nodes and refresh their local hosts entries.
+# Uses your normal AWS CLI credentials/profile; AWS_PROFILE is supported.
+set -euo pipefail
+
+usage() {
+  printf 'Usage: %s start|stop|status|update\n' "${0##*/}"
+}
+
+if [[ $# -ne 1 ]]; then
+  usage >&2
+  exit 2
+fi
+
+case "$1" in
+  start) waiter=instance-running ;;
+  stop) waiter=instance-stopped ;;
+  status|update) ;;
+  -h|--help) usage; exit 0 ;;
+  *) usage >&2; exit 2 ;;
+esac
+
+if ! command -v aws >/dev/null 2>&1; then
+  printf 'Error: AWS CLI is not installed or is not on PATH.\n' >&2
+  exit 1
+fi
+
+readonly region=us-east-1
+readonly action="$1"
+instance_ids=(
+  i-05fff6ead91e19376 # control
+  i-0dd49f4b8d4cc8984 # worker-01
+  i-0806812916c6693f6 # worker-02
+)
+
+# Elevate only the hosts-file operations, not the AWS CLI calls.
+run_privileged() {
+  if [[ "$EUID" -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+update_hosts() {
+  local addresses temporary_directory
+  addresses=$(aws ec2 describe-instances \
+    --region "$region" \
+    --instance-ids "${instance_ids[@]}" \
+    --query 'Reservations[].Instances[].[InstanceId,PublicIpAddress]' \
+    --output text \
+    --no-cli-pager)
+
+  temporary_directory=$(mktemp -d "${TMPDIR:-/tmp}/kubernetes-hosts.XXXXXX")
+  # Remove only the temporary directory this function created.
+  trap 'rm -rf "$temporary_directory"' EXIT
+
+  # Validate all three addresses before touching /etc/hosts.
+  if ! printf '%s\n' "$addresses" | awk '
+    function valid_ipv4(ip, parts, count, i) {
+      count = split(ip, parts, ".")
+      if (count != 4) return 0
+      for (i = 1; i <= 4; i++)
+        if (parts[i] !~ /^[0-9]+$/ || parts[i] + 0 > 255) return 0
+      return 1
+    }
+    {
+      if ($1 == "i-05fff6ead91e19376") name = "control"
+      else if ($1 == "i-0dd49f4b8d4cc8984") name = "worker-01"
+      else if ($1 == "i-0806812916c6693f6") name = "worker-02"
+      else { invalid = 1; next }
+      if (NF != 2 || !valid_ipv4($2) || seen[name]++) { invalid = 1; next }
+      print $2 "\t" name
+      count++
+    }
+    END { if (invalid || count != 3) exit 1 }
+  ' > "$temporary_directory/addresses"; then
+    printf 'Error: Could not obtain valid public IPs for all three nodes. /etc/hosts was not changed.\n' >&2
+    exit 1
+  fi
+
+  # Remove just our three aliases, preserving other aliases and comments.
+  awk '
+    NR == FNR { aliases[$2] = 1; entries[++count] = $0; next }
+    {
+      original = $0
+      comment = ""
+      position = index($0, "#")
+      if (position) {
+        comment = substr($0, position)
+        $0 = substr($0, 1, position - 1)
+      }
+      removed = 0
+      retained = $1
+      names = 0
+      for (i = 2; i <= NF; i++) {
+        if (tolower($i) in aliases) removed = 1
+        else { retained = retained "\t" $i; names++ }
+      }
+      if (!removed) print original
+      else if (names) print retained (comment != "" ? "\t" comment : "")
+      else if (comment != "") print comment
+    }
+    END { for (i = 1; i <= count; i++) print entries[i] }
+  ' "$temporary_directory/addresses" /etc/hosts > "$temporary_directory/hosts"
+
+  if cmp -s /etc/hosts "$temporary_directory/hosts"; then
+    printf '\n/etc/hosts already has the current node IPs.\n'
+  else
+    run_privileged cp -p /etc/hosts /etc/hosts.kubernetes.bak
+    run_privileged tee /etc/hosts < "$temporary_directory/hosts" > /dev/null
+    printf '\nUpdated /etc/hosts. Previous contents saved to /etc/hosts.kubernetes.bak.\n'
+  fi
+
+  rm -rf "$temporary_directory"
+  trap - EXIT
+}
+
+if [[ "$action" == start || "$action" == stop ]]; then
+  printf 'Requesting %s for the Kubernetes instances in %s...\n' "$action" "$region"
+  aws ec2 "${action}-instances" \
+    --region "$region" \
+    --instance-ids "${instance_ids[@]}" \
+    --no-cli-pager \
+    --output table
+
+  printf 'Waiting for all instances to reach the requested state...\n'
+  if ! aws ec2 wait "$waiter" \
+    --region "$region" \
+    --instance-ids "${instance_ids[@]}" \
+    --no-cli-pager; then
+    printf 'Error: The waiter failed or timed out. Check instance states before retrying.\n' >&2
+    exit 1
+  fi
+
+fi
+
+aws ec2 describe-instances \
+  --region "$region" \
+  --instance-ids "${instance_ids[@]}" \
+  --query 'Reservations[].Instances[].{Name:Tags[?Key==`Name`].Value|[0],ID:InstanceId,State:State.Name,PublicIP:PublicIpAddress,PrivateIP:PrivateIpAddress}' \
+  --output table \
+  --no-cli-pager
+
+if [[ "$action" == update ]]; then
+  update_hosts
+  exit 0
+fi
+
+if [[ "$action" == start ]]; then
+  printf '\nRun ./instances update to refresh /etc/hosts, then reopen your SSH tunnel.\n'
+  printf 'EC2 is running; allow Kubernetes time to recover before checking nodes.\n'
+elif [[ "$action" == stop ]]; then
+  printf '\nAll three instances are stopped. Their EBS disks are preserved.\n'
+fi
