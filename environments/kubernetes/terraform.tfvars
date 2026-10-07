@@ -12,3 +12,6 @@ ssh_key_name         = "FrancoTech"
 worker_count         = 2
 root_volume_size_gib = 20
 admin_ipv4_cidr      = "73.193.219.6/32"
+
+# ecr variables
+container_repository_name = "spotify-now-playing"

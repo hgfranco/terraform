@@ -110,3 +110,8 @@ variable "root_volume_size_gib" {
     error_message = "Provide a whole-number disk size of at least 20 GiB."
   }
 }
+
+variable "container_repository_name" {
+  description = "ECR repository name for the application container images."
+  type        = string
+}

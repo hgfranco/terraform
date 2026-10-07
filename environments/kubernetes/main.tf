@@ -1,6 +1,5 @@
 module "network" {
-  source = "../../modules/network"
-
+  source               = "../../modules/network"
   name                 = var.name
   vpc_cidr             = var.vpc_cidr
   availability_zones   = var.availability_zones
@@ -9,8 +8,7 @@ module "network" {
 }
 
 module "kubeadm_cluster" {
-  source = "../../modules/kubeadm_cluster"
-
+  source               = "../../modules/kubeadm_cluster"
   name                 = var.name
   vpc_id               = module.network.vpc_id
   subnet_id            = module.network.public_subnet_ids[var.availability_zones[0]]
@@ -20,4 +18,9 @@ module "kubeadm_cluster" {
   admin_ipv4_cidr      = var.admin_ipv4_cidr
   worker_count         = var.worker_count
   root_volume_size_gib = var.root_volume_size_gib
+}
+
+module "ecr" {
+  source          = "../../modules/ecr"
+  repository_name = var.container_repository_name
 }
