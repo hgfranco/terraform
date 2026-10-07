@@ -28,6 +28,7 @@ resource "aws_instance" "node" {
   vpc_security_group_ids      = [aws_security_group.nodes.id]
   associate_public_ip_address = true
   disable_api_termination     = true
+  iam_instance_profile        = var.instance_profile_name
 
   user_data = <<-EOF
     #cloud-config

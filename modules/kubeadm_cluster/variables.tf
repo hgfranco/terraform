@@ -66,3 +66,9 @@ variable "root_volume_size_gib" {
     error_message = "Provide a whole-number disk size of at least 20 GiB."
   }
 }
+
+variable "instance_profile_name" {
+  description = "IAM instance profile attached to the cluster nodes."
+  type        = string
+  default     = null
+}
