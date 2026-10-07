@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Keep this terminal open while using kubectl from your Mac.
+set -euo pipefail
+
+printf 'Opening Kubernetes API tunnel on localhost:16443. Press Ctrl+C to close it.\n'
+exec ssh -N \
+  -L 127.0.0.1:16443:127.0.0.1:6443 \
+  -o ExitOnForwardFailure=yes \
+  -o ServerAliveInterval=30 \
+  -o ServerAliveCountMax=3 \
+  ubuntu@control
