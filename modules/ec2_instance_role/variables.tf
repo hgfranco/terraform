@@ -13,6 +13,12 @@ variable "policy_json" {
   }
 }
 
+variable "managed_policy_arns" {
+  description = "AWS managed or customer managed policy ARNs attached to the role."
+  type        = set(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Tags applied to the IAM role and instance profile."
   type        = map(string)

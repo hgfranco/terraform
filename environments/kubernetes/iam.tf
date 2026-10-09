@@ -23,6 +23,7 @@ data "aws_iam_policy_document" "ecr_pull" {
 module "node_instance_role" {
   source = "../../modules/ec2_instance_role"
 
-  name        = "${var.name}-nodes"
-  policy_json = data.aws_iam_policy_document.ecr_pull.json
+  name                = "${var.name}-nodes"
+  policy_json         = data.aws_iam_policy_document.ecr_pull.json
+  managed_policy_arns = ["arn:aws:iam::aws:policy/AmazonEBSCSIDriverPolicyV2"]
 }
