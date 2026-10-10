@@ -15,14 +15,10 @@ resources separate. The apex and www live-site hostnames are rejected.
 
 ## Credentials and IDs
 
-The Cloudflare domain must be active. Copy its account ID and zone ID from the
-Cloudflare dashboard. These IDs are not secrets. Supply them without committing
-credentials:
-
-```bash
-export TF_VAR_cloudflare_account_id="YOUR_ACCOUNT_ID"
-export TF_VAR_cloudflare_zone_id="YOUR_ZONE_ID"
-```
+The Cloudflare domain must be active. Its account ID and zone ID are recorded in
+the committed terraform.tfvars file. These IDs are not secrets, and Terraform
+loads them automatically; no TF_VAR exports are required. Keep API credentials
+out of this file.
 
 Create a Cloudflare API token scoped to this account and this DNS zone with:
 - Account / Cloudflare Tunnel / Edit
