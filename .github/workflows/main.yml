@@ -50,3 +50,10 @@ jobs:
       - name: Validate Cloudflare retirement configuration
         working-directory: environments/cloudflare
         run: terraform validate -no-color
+
+      - name: Test controller IAM policy without credentials
+        working-directory: modules/aws_load_balancer_controller_policy
+        run: |
+          cp ../../environments/kubernetes/.terraform.lock.hcl .terraform.lock.hcl
+          terraform init -backend=false -input=false -lockfile=readonly
+          terraform test -no-color
