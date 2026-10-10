@@ -28,3 +28,7 @@ The [Cloudflare retirement configuration](environments/cloudflare/README.md)
 keeps the original backend and providers for removing the previous tunnel and
 token secret after the replacement has been verified. Review its destruction
 plan separately from the Kubernetes environment's network plan.
+
+The [public endpoint configuration](environments/public_endpoint/README.md)
+requests and validates the ACM certificate for the ALB HTTPS listener. It uses
+separate state and leaves application DNS cutover to a later step.

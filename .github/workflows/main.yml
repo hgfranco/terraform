@@ -57,3 +57,18 @@ jobs:
           cp ../../environments/kubernetes/.terraform.lock.hcl .terraform.lock.hcl
           terraform init -backend=false -input=false -lockfile=readonly
           terraform test -no-color
+
+      - name: Initialize public endpoint configuration
+        working-directory: environments/public_endpoint
+        run: terraform init -backend=false -input=false -lockfile=readonly
+
+      - name: Validate public endpoint configuration
+        working-directory: environments/public_endpoint
+        run: terraform validate -no-color
+
+      - name: Test certificate DNS validation without credentials
+        working-directory: modules/acm_dns_certificate
+        run: |
+          cp ../../environments/public_endpoint/.terraform.lock.hcl .terraform.lock.hcl
+          terraform init -backend=false -input=false -lockfile=readonly
+          terraform test -no-color
