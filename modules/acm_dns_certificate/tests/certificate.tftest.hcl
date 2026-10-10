@@ -1,7 +1,7 @@
 mock_provider "aws" {
   mock_resource "aws_acm_certificate" {
     defaults = {
-      arn                       = "arn:aws:acm:us-east-1:123456789012:certificate/11111111-1111-1111-1111-111111111111"
+      arn = "arn:aws:acm:us-east-1:123456789012:certificate/11111111-1111-1111-1111-111111111111"
       domain_validation_options = [
         {
           domain_name           = "app.example.com"
