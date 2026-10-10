@@ -2,8 +2,8 @@
 name                 = "kubernetes"
 vpc_cidr             = "10.42.0.0/16"
 availability_zones   = ["us-east-1a", "us-east-1b"]
-public_subnet_cidrs   = ["10.42.1.0/24", "10.42.2.0/24"]
-private_subnet_cidrs  = []
+public_subnet_cidrs  = ["10.42.1.0/24", "10.42.2.0/24"]
+private_subnet_cidrs = []
 
 # kubeadm_cluster variables
 ami_id               = "ami-0045d7fc2ad003464"
