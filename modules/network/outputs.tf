@@ -16,3 +16,8 @@ output "private_subnet_ids" {
     for az, subnet in aws_subnet.private : az => subnet.id
   }
 }
+
+output "vpc_arn" {
+  description = "ARN of the VPC, for IAM permission conditions."
+  value       = aws_vpc.this.arn
+}
