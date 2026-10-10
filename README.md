@@ -16,7 +16,15 @@
 - Security Group
 - Secrets
 
-## Cloudflare publishing
+## AWS load balancer migration
 
-[Cloudflare environment](environments/cloudflare/README.md) provisions a dedicated
-public hostname for the Kubernetes app using a [reusable tunnel module](modules/cloudflare_tunnel/README.md).
+The Kubernetes environment adds a second public subnet in us-east-1b and
+load-balancer discovery tags to prepare for an AWS Application Load Balancer.
+Existing nodes remain in the first subnet in us-east-1a.
+The controller IAM permissions, installation, HTTPS certificate, and Ingress
+remain separate steps; these network changes do not create an ALB.
+
+The [Cloudflare retirement configuration](environments/cloudflare/README.md)
+keeps the original backend and providers for removing the previous tunnel and
+token secret after the replacement has been verified. Review its destruction
+plan separately from the Kubernetes environment's network plan.

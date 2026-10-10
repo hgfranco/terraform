@@ -56,3 +56,9 @@ variable "private_subnet_cidrs" {
     error_message = "Provide no private subnets, or one valid IPv4 CIDR per availability zone."
   }
 }
+
+variable "public_subnet_tags" {
+  description = "Additional tags for public subnets, including load-balancer discovery tags."
+  type        = map(string)
+  default     = {}
+}
