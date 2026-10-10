@@ -27,7 +27,7 @@ jobs:
           terraform_version: 1.16.4
 
       - name: Check formatting
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check -diff -recursive
 
       - name: Initialize providers and modules
         run: terraform init -backend=false -input=false
