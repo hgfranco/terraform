@@ -1,4 +1,6 @@
 mock_provider "cloudflare" {
+  override_during = plan
+
   mock_resource "cloudflare_zero_trust_tunnel_cloudflared" {
     defaults = {
       id = "11111111-2222-4333-8444-555555555555"
