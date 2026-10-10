@@ -15,3 +15,8 @@
 - Route 53
 - Security Group
 - Secrets
+
+## Cloudflare publishing
+
+[Cloudflare environment](environments/cloudflare/README.md) provisions a dedicated
+public hostname for the Kubernetes app using a [reusable tunnel module](modules/cloudflare_tunnel/README.md).
