@@ -1,66 +1,44 @@
 # Retire the Cloudflare Tunnel
 
-The application is moving to an AWS Application Load Balancer. This directory
-now declares no managed resources and exists only to retire the previous tunnel
-from its original state. It does not provision an ALB or change the Render site.
+This root retains the original backend and providers to retire the tunnel,
+route configuration, and AWS token secret/version. Its removed block preserves
+the application DNS record that moves to environments/public_endpoint.
 
-## Timing and expected changes
+## Order of operations
 
-Do not apply this directory until the ALB, controller, HTTPS certificate, and
-application routing have been verified. The ALB network prerequisites alone
-are not a complete replacement.
+Complete the DNS handoff in ../public_endpoint/README.md first. That procedure
+removes only the old CNAME state binding, imports the existing record into the
+new root, and updates it to the tested HTTPS ALB. Verify the public application
+route before applying this retirement root.
 
-Applying this root removes the tunnel, its route configuration, its
-k8s.whatishenrylisteningto.com CNAME, and the AWS tunnel-token secret/version.
-It does not remove the Cloudflare DNS zone, account, or apex/www Render records.
-Coordinate removal of the tunnel CNAME with creation of the ALB DNS record;
-this retirement configuration does not create the replacement record.
+From the Terraform repository root:
 
-The previous prevent_destroy blocks leave with their resource declarations.
-Terraform can therefore plan the deliberate retirement. No state-rm command,
-manual resource deletion, or force deletion is needed.
+```bash
+terraform -chdir=environments/cloudflare init
+terraform -chdir=environments/cloudflare workspace select kubernetes
+terraform -chdir=environments/cloudflare state list
+terraform -chdir=environments/cloudflare plan
+```
 
-The Secrets Manager secret retains its existing 30-day recovery window.
-Terraform schedules its deletion; it is not immediately purged.
-The bootstrap API credential cloudflare/terraform/api-token was created outside
-this state and is not removed. The Kubernetes Secret cloudflare-tunnel is also
-outside this state and requires separate cleanup.
+After the DNS handoff, expect 0 to add, 0 to change, and 4 to destroy.
+The transferred CNAME must not appear among destructions. If the old binding
+still exists, the removed block plans to forget it without deleting DNS, but
+complete the documented handoff before retiring the tunnel.
 
-## Retire using the original backend
+After reviewing the plan:
 
-Keep the existing provider credentials available. The Cloudflare provider reads
-CLOUDFLARE_API_TOKEN; AWS uses your normal credential chain.
-From the Terraform repository root, after the replacement is ready:
-
-~~~bash
-cd environments/cloudflare
-terraform init
-terraform workspace select kubernetes
-terraform workspace show
-terraform state list
-terraform plan
-~~~
-
-This uses the original S3 key cloudflare/terraform.tfstate with workspace prefix
-environments. It does not use the Kubernetes infrastructure state.
-Select the existing kubernetes workspace; do not create a new empty workspace.
-
-For the previously applied setup, expect 0 to add, 0 to change, and 5 to destroy.
-Review any different result before proceeding. In particular, an empty plan
-while the tunnel still exists usually means the wrong state or workspace.
-
-After reviewing and coordinating the DNS cutover:
-
-~~~bash
-terraform apply
-terraform state list
-terraform plan
-~~~
+```bash
+terraform -chdir=environments/cloudflare apply
+terraform -chdir=environments/cloudflare state list
+terraform -chdir=environments/cloudflare plan
+```
 
 State should contain no resources and the final plan should report no changes.
-Keep this backend configuration until those checks are complete. Do not delete
-the S3 state or its version history; old versions contain sensitive token data
-and remain governed by the existing private encrypted bucket controls.
+The secret retains its 30-day recovery window and is scheduled for deletion.
+The bootstrap API credential and Kubernetes cloudflare-tunnel Secret are outside
+this state and are not deleted by this operation. The Cloudflare zone, account,
+and Render apex/www records are also unaffected.
 
-Removing this code does not itself perform retirement. GitHub Actions only
-checks formatting and validates the configuration with its backend disabled.
+Keep the backend until retirement is confirmed. Do not delete the S3 state or
+its version history; previous versions contain sensitive token data protected
+by the private encrypted bucket. GitHub Actions only validates configuration.
