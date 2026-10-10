@@ -1,4 +1,12 @@
-# Retirement configuration: intentionally declares no managed resources.
-# Keep this root, its providers, lock file, and S3 backend until the kubernetes
-# workspace has been applied and its state contains no remaining resources.
-# See README.md before applying; the previous tunnel DNS record is removed.
+# Retirement configuration: retain the original backend until its remaining
+# tunnel resources are retired after the public ALB endpoint is verified.
+
+# The application DNS record transfers to environments/public_endpoint.
+# Never destroy that record when retiring the old tunnel state.
+removed {
+  from = module.tunnel.cloudflare_dns_record.this
+
+  lifecycle {
+    destroy = false
+  }
+}
