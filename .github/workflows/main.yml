@@ -43,22 +43,10 @@ jobs:
         working-directory: environments/kubernetes
         run: terraform validate -no-color
 
-      - name: Initialize Cloudflare configuration
+      - name: Initialize Cloudflare retirement configuration
         working-directory: environments/cloudflare
         run: terraform init -backend=false -input=false -lockfile=readonly
 
-      - name: Validate Cloudflare configuration
+      - name: Validate Cloudflare retirement configuration
         working-directory: environments/cloudflare
         run: terraform validate -no-color
-
-      - name: Test Cloudflare configuration without credentials
-        working-directory: environments/cloudflare
-        run: terraform test -no-color
-
-      - name: Test reusable tunnel routing without credentials
-        working-directory: modules/cloudflare_tunnel
-        run: |
-          cp ../../environments/cloudflare/.terraform.lock.hcl .terraform.lock.hcl
-          terraform init -backend=false -input=false
-          terraform test -no-color
-
