@@ -45,17 +45,11 @@ jobs:
 
       - name: Initialize Cloudflare configuration
         working-directory: environments/cloudflare
-        run: terraform init -backend=false -input=false
+        run: terraform init -backend=false -input=false -lockfile=readonly
 
       - name: Validate Cloudflare configuration
         working-directory: environments/cloudflare
         run: terraform validate -no-color
-
-      - name: Record provider locks for review
-        working-directory: environments/cloudflare
-        run: |
-          terraform providers lock -platform=darwin_arm64 -platform=linux_amd64
-          cat .terraform.lock.hcl
 
       - name: Test Cloudflare configuration without credentials
         working-directory: environments/cloudflare
@@ -64,6 +58,7 @@ jobs:
       - name: Test reusable tunnel routing without credentials
         working-directory: modules/cloudflare_tunnel
         run: |
+          cp ../../environments/cloudflare/.terraform.lock.hcl .terraform.lock.hcl
           terraform init -backend=false -input=false
           terraform test -no-color
 

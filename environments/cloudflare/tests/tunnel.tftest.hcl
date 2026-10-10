@@ -11,11 +11,12 @@ mock_provider "cloudflare" {
 
 mock_provider "aws" {}
 
-override_data {
-  target          = module.tunnel.data.cloudflare_zero_trust_tunnel_cloudflared_token.this
-  override_during = plan
-  values = {
-    token = "mock-connector-token-for-offline-testing"
+override_module {
+  target = module.tunnel
+  outputs = {
+    token     = "mock-connector-token-for-offline-testing"
+    hostname  = "k8s.whatishenrylisteningto.com"
+    tunnel_id = "11111111-2222-4333-8444-555555555555"
   }
 }
 

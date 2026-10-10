@@ -35,8 +35,8 @@ run "route_only_the_configured_hostname" {
   }
 
   assert {
-    condition     = cloudflare_dns_record.this.content == "11111111-2222-4333-8444-555555555555.cfargotunnel.com" && cloudflare_dns_record.this.proxied
-    error_message = "DNS must proxy to this tunnel rather than an EC2 public IP."
+    condition     = cloudflare_dns_record.this.proxied && cloudflare_dns_record.this.type == "CNAME" && cloudflare_dns_record.this.ttl == 1
+    error_message = "DNS must be a proxied CNAME with automatic TTL."
   }
 }
 
