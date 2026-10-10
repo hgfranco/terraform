@@ -51,6 +51,12 @@ jobs:
         working-directory: environments/cloudflare
         run: terraform validate -no-color
 
+      - name: Record provider locks for review
+        working-directory: environments/cloudflare
+        run: |
+          terraform providers lock -platform=darwin_arm64 -platform=linux_amd64
+          cat .terraform.lock.hcl
+
       - name: Test Cloudflare configuration without credentials
         working-directory: environments/cloudflare
         run: terraform test -no-color
@@ -61,8 +67,3 @@ jobs:
           terraform init -backend=false -input=false
           terraform test -no-color
 
-      - name: Record provider locks for review
-        working-directory: environments/cloudflare
-        run: |
-          terraform providers lock -platform=darwin_arm64 -platform=linux_amd64
-          cat .terraform.lock.hcl

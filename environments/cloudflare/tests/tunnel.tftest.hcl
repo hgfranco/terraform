@@ -7,14 +7,17 @@ mock_provider "cloudflare" {
     }
   }
 
-  mock_data "cloudflare_zero_trust_tunnel_cloudflared_token" {
-    defaults = {
-      token = "mock-connector-token-for-offline-testing"
-    }
-  }
 }
 
 mock_provider "aws" {}
+
+override_data {
+  target          = module.tunnel.data.cloudflare_zero_trust_tunnel_cloudflared_token.this
+  override_during = plan
+  values = {
+    token = "mock-connector-token-for-offline-testing"
+  }
+}
 
 variables {
   cloudflare_account_id = "11111111111111111111111111111111"
