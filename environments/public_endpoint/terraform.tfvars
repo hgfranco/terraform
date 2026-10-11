@@ -5,5 +5,4 @@ existing_dns_record_id = "bb9e71ba176e6992f1a8f3d8f40bbbfc"
 
 public_hostnames = [
   "whatishenrylisteningto.com",
-  "www.whatishenrylisteningto.com",
 ]

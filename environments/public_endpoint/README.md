@@ -85,11 +85,11 @@ Cloudflare TLS mode, and end-to-end HTTPS require provisioning checks.
 
 ## Prepare the Render domain migration
 
-public_hostnames lists the apex and www names to prepare for the AWS endpoint.
-Each uses the same reusable certificate module and gets its own ACM certificate
-and validation CNAME. The existing k8s certificate, application CNAME, and ALB
-remain unchanged. Application DNS records for the apex and www names are not
-managed by this step; Render continues serving those names.
+public_hostnames lists only whatishenrylisteningto.com. It uses the reusable
+certificate module to request its own ACM certificate and validation CNAME.
+The existing k8s certificate, application CNAME, and ALB remain unchanged.
+This step does not change application DNS for the apex; Render continues
+serving it. No www certificate or routing is configured.
 
 From this directory, after loading AWS credentials and cloudflare-login:
 
@@ -100,19 +100,19 @@ terraform validate
 terraform plan
 ```
 
-Expect 6 to add, 0 to change, and 0 to destroy: two certificates, two validation
-CNAMEs, and two validation waiters. Review any different result before applying.
+Expect 3 to add, 0 to change, and 0 to destroy: one certificate, one validation
+CNAME, and one validation waiter. Review any different result before applying.
 
 ```bash
 terraform apply
 terraform output public_certificate_arns
 ```
 
-Add both issued certificate ARNs to the Ingress certificate-arn annotation
-alongside the existing k8s certificate, and add host routing rules for the apex
-and www names. Test each hostname directly through the ALB using curl
---connect-to, preserving TLS SNI and certificate verification. Only then
-transfer the existing apex/www DNS records to the ALB in a separate change.
+Add the issued apex certificate ARN to the Ingress certificate-arn annotation
+alongside the existing k8s certificate, and add a routing rule for the apex.
+Test whatishenrylisteningto.com directly through the ALB using curl --connect-to,
+preserving TLS SNI and certificate verification. Only then transfer its existing
+DNS record to the ALB in a separate change.
 
 Verify Spotify's OAuth redirect configuration for the final hostname before
 retiring Render. Keep Render running until public DNS, HTTPS, application state,
