@@ -82,3 +82,30 @@ token secret/version. See ../cloudflare/README.md.
 CI validates configuration and tests certificate DNS validation with mock
 providers. Live DNS ownership, AWS permissions, certificate issuance,
 Cloudflare TLS mode, and end-to-end HTTPS require provisioning checks.
+
+## Completed main-domain migration
+
+Only whatishenrylisteningto.com is configured; www is excluded. The apex ACM
+certificate and its Cloudflare validation record have been issued. The apex
+DNS record was imported, then replaced from Render's A record with a proxied
+CNAME to the existing ALB. Both direct ALB HTTPS and public status responses
+were verified during provisioning.
+
+The observed plan was 1 to import, 1 to add, 0 to change, 1 to destroy because
+Cloudflare changes from A to CNAME require replacement. The migration is now
+complete; a repeat plan should report no changes.
+
+The domain's parent delegation was verified as Cloudflare's louis and meg
+nameservers. The existing AWS NS records were not deleted by this configuration.
+
+Keep the import block as migration history; it is ignored when the destination
+record already exists in state. Do not repeat its old import ID in a new state:
+that A record was deleted during replacement. Use this environment's existing
+S3 backend and workspace kubernetes.
+
+Before retiring old hosting, verify the public site, live Spotify updates,
+Cloudflare Full (strict) TLS, and required OAuth redirect configuration.
+This PR records already-applied infrastructure; merging it does not deploy.
+
+References:
+- https://developers.cloudflare.com/dns/cname-flattening/
