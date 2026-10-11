@@ -16,7 +16,10 @@ data "aws_iam_policy_document" "ecr_pull" {
       "ecr:GetDownloadUrlForLayer",
     ]
 
-    resources = [module.ecr.repository_arn]
+    resources = [
+      module.ecr.repository_arn,
+      module.personal_site_ecr.repository_arn,
+    ]
   }
 }
 
