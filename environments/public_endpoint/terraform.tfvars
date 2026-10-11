@@ -10,3 +10,6 @@ public_dns_record_ids = {
 }
 
 personal_site_dns_enabled = true
+
+# Enable after the .com certificate and Ingress are verified against the ALB.
+personal_site_com_dns_enabled = false
