@@ -10,3 +10,5 @@ public_hostnames = [
 public_dns_record_ids = {
   "whatishenrylisteningto.com" = "d5c0882e9cfbde24f12c1110d9da9d5f"
 }
+
+personal_site_dns_enabled = true
