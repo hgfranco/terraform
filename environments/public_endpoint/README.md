@@ -83,15 +83,36 @@ CI validates configuration and tests certificate DNS validation with mock
 providers. Live DNS ownership, AWS permissions, certificate issuance,
 Cloudflare TLS mode, and end-to-end HTTPS require provisioning checks.
 
-## Prepare the Render domain migration
+## Main domain migration
 
-public_hostnames lists only whatishenrylisteningto.com. It uses the reusable
-certificate module to request its own ACM certificate and validation CNAME.
-The existing k8s certificate, application CNAME, and ALB remain unchanged.
-This step does not change application DNS for the apex; Render continues
-serving it. No www certificate or routing is configured.
+Only whatishenrylisteningto.com is configured; www is excluded. Its separate ACM
+certificate has been issued, the Ingress contains the apex routing rule, and
+direct ALB HTTPS with certificate verification has returned the app's status JSON.
 
-From this directory, after loading AWS credentials and cloudflare-login:
+public_dns_record_ids imports the existing apex A record
+d5c0882e9cfbde24f12c1110d9da9d5f, which currently points to Render at 216.24.57.1.
+Terraform updates it to a proxied CNAME pointing at alb_hostname. Cloudflare
+supports apex CNAMEs through flattening; do not pin an ALB's changing IP addresses.
+
+### Check existing delegation before applying
+
+The user supplied four NS records at the apex pointing to AWS DNS. Cloudflare's
+API documents that NS records cannot coexist at the same name as other record
+types, so they may prevent this update. This configuration does not delete them.
+
+Verify actual registrar/parent delegation with dig +trace whatishenrylisteningto.com
+NS and compare it with the Cloudflare zone's assigned name servers. Inspect the
+zone before deciding whether these AWS NS records are obsolete. Do not delete
+delegation records or change registrar name servers merely to bypass an API error.
+Resolve any confirmed NS conflict before applying the apex cutover.
+
+References:
+- https://developers.cloudflare.com/dns/cname-flattening/
+- https://developers.cloudflare.com/api/resources/dns/subresources/records/methods/update/
+
+### Review and apply the DNS cutover
+
+After loading AWS credentials and cloudflare-login, from this directory:
 
 ```bash
 terraform init
@@ -100,20 +121,26 @@ terraform validate
 terraform plan
 ```
 
-Expect 3 to add, 0 to change, and 0 to destroy: one certificate, one validation
-CNAME, and one validation waiter. Review any different result before applying.
+Because the certificate and validation record were already applied, expect
+1 to import, 0 to add, 1 to change, 0 to destroy. The apex record type changes
+A -> CNAME and its content changes from Render's IP to the ALB hostname.
+The existing k8s route and all NS records must remain unchanged. Review any
+different result before applying.
 
 ```bash
 terraform apply
-terraform output public_certificate_arns
+terraform plan
+curl -fsS --max-time 15 https://whatishenrylisteningto.com/api/status
 ```
 
-Add the issued apex certificate ARN to the Ingress certificate-arn annotation
-alongside the existing k8s certificate, and add a routing rule for the apex.
-Test whatishenrylisteningto.com directly through the ALB using curl --connect-to,
-preserving TLS SNI and certificate verification. Only then transfer its existing
-DNS record to the ALB in a separate change.
+Verify Cloudflare uses Full (strict) TLS for the hostname, view the public site,
+and confirm live Spotify updates and any required OAuth redirect configuration
+before deleting the Render service. Keep Render running as a rollback origin
+until verification is complete.
 
-Verify Spotify's OAuth redirect configuration for the final hostname before
-retiring Render. Keep Render running until public DNS, HTTPS, application state,
-and any required reauthorization flow have been verified.
+The import block remains as migration history and is ignored after the record
+is managed at its destination address. This code contains only public IDs and
+hostnames; Cloudflare API credentials still come from the environment.
+
+CI validates the configuration, but live DNS cutover and NS-record compatibility
+must be checked during provisioning.

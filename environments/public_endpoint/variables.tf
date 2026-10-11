@@ -45,3 +45,17 @@ variable "public_hostnames" {
     error_message = "The existing hostname already has its own certificate; list only additional hostnames."
   }
 }
+
+variable "public_dns_record_ids" {
+  description = "Existing application DNS record IDs by certified hostname for ALB cutover."
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition = alltrue([
+      for hostname, record_id in var.public_dns_record_ids :
+      contains(var.public_hostnames, hostname) && can(regex("^[a-f0-9]{32}$", record_id))
+    ])
+    error_message = "Each DNS record must have a 32-character ID and a hostname listed in public_hostnames."
+  }
+}
