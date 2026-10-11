@@ -34,3 +34,14 @@ variable "existing_dns_record_id" {
     error_message = "Provide the 32-character DNS record ID or null."
   }
 }
+
+variable "public_hostnames" {
+  description = "Additional hostnames in this Cloudflare zone to prepare for ALB HTTPS."
+  type        = set(string)
+  default     = []
+
+  validation {
+    condition     = !contains(var.public_hostnames, var.hostname)
+    error_message = "The existing hostname already has its own certificate; list only additional hostnames."
+  }
+}
