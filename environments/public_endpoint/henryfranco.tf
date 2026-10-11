@@ -56,7 +56,7 @@ resource "cloudflare_dns_record" "personal_site_com" {
   zone_id = local.personal_site_com_zone_id
   name    = "henryfranco.com"
   type    = "CNAME"
-  content = var.alb_hostname
+  content = local.application_alb_hostname
   ttl     = 1
   proxied = true
   comment = "Managed by Terraform: personal site on AWS ALB"

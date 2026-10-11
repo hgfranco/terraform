@@ -58,7 +58,7 @@ resource "aws_acm_certificate_validation" "personal_site" {
 
 data "aws_lb" "personal_site" {
   count = var.personal_site_dns_enabled ? 1 : 0
-  name  = var.personal_site_alb_name
+  name  = local.personal_site_effective_alb_name
 }
 
 resource "aws_route53_record" "personal_site" {

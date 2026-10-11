@@ -68,3 +68,9 @@ root is retained to preserve state history; see ../cloudflare/README.md.
 CI validates configuration and tests DNS certificate validation with mock
 providers. Live DNS, certificate associations and public HTTPS are verified
 during deployment.
+
+## Application namespace migration
+
+See [shared-alb-migration.md](shared-alb-migration.md). The new DNS switch defaults
+to false and is explicitly false in terraform.tfvars. Terraform only reads the
+controller-owned ALB; it does not create, retag, import, or delete it.

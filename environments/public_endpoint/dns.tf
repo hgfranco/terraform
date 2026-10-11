@@ -4,7 +4,7 @@ resource "cloudflare_dns_record" "public_application" {
   zone_id = var.cloudflare_zone_id
   name    = each.key
   type    = "CNAME"
-  content = var.alb_hostname
+  content = local.application_alb_hostname
   ttl     = 1
   proxied = true
   comment = "Managed by Terraform: AWS ALB application endpoint"
