@@ -14,11 +14,15 @@ addition to its existing zone permissions. The zone ID is discovered by name.
 ```bash
 terraform init
 terraform workspace select kubernetes
-terraform plan
-terraform apply
-terraform output personal_site_com_certificate_arn
-terraform output -json personal_site_com_existing_apex > /tmp/henryfranco-com-dns-before.json
+terraform plan -target=module.personal_site_com_certificate
+terraform apply -target=module.personal_site_com_certificate
 ```
+
+The retired Spotify certificate may still be attached because the Ingress cannot
+reconcile until the .com certificate exists. Use the targeted certificate step
+above to break that dependency; it does not run the merged retirement deletions.
+After the new certificate is issued, wait for Ingress reconciliation and confirm
+the retired certificate has no InUseBy associations before a full plan/apply.
 
 Keep personal_site_com_dns_enabled false for this first apply. It creates and
 validates the ACM certificate in us-east-1, but leaves the apex website destination
@@ -42,7 +46,17 @@ curl -fsS --connect-to "henryfranco.com:443:${ALB_HOST}:443" https://henryfranco
 
 ## Publish DNS
 
-After those checks succeed, set personal_site_com_dns_enabled = true in
+After direct HTTPS checks succeed and the retired certificate is detached, run
+a full plan and apply with DNS still disabled. Review the retired-resource
+deletions, then save the current apex values before cutover:
+
+```bash
+terraform plan
+terraform apply
+terraform output -json personal_site_com_existing_apex > /tmp/henryfranco-com-dns-before.json
+```
+
+Then set personal_site_com_dns_enabled = true in
 terraform.tfvars through a follow-up PR, then review and apply the plan. Terraform
 imports the existing apex A/CNAME automatically if present. Changing an A record
 to CNAME replaces that one record; an existing CNAME is updated. Multiple apex web
