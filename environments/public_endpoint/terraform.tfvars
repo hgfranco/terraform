@@ -1,5 +1,5 @@
-cloudflare_zone_id     = "a8548b270f3f3f742cbf4354dfda2444"
-alb_hostname           = "k8s-spotifyn-spotifyn-d41800ca80-205775015.us-east-1.elb.amazonaws.com"
+cloudflare_zone_id = "a8548b270f3f3f742cbf4354dfda2444"
+alb_hostname       = "k8s-spotifyn-spotifyn-d41800ca80-205775015.us-east-1.elb.amazonaws.com"
 
 public_hostnames = [
   "whatishenrylisteningto.com",
