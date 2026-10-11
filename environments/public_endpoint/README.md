@@ -83,64 +83,29 @@ CI validates configuration and tests certificate DNS validation with mock
 providers. Live DNS ownership, AWS permissions, certificate issuance,
 Cloudflare TLS mode, and end-to-end HTTPS require provisioning checks.
 
-## Main domain migration
+## Completed main-domain migration
 
-Only whatishenrylisteningto.com is configured; www is excluded. Its separate ACM
-certificate has been issued, the Ingress contains the apex routing rule, and
-direct ALB HTTPS with certificate verification has returned the app's status JSON.
+Only whatishenrylisteningto.com is configured; www is excluded. The apex ACM
+certificate and its Cloudflare validation record have been issued. The apex
+DNS record was imported, then replaced from Render's A record with a proxied
+CNAME to the existing ALB. Both direct ALB HTTPS and public status responses
+were verified during provisioning.
 
-public_dns_record_ids imports the existing apex A record
-d5c0882e9cfbde24f12c1110d9da9d5f, which currently points to Render at 216.24.57.1.
-Terraform updates it to a proxied CNAME pointing at alb_hostname. Cloudflare
-supports apex CNAMEs through flattening; do not pin an ALB's changing IP addresses.
+The observed plan was 1 to import, 1 to add, 0 to change, 1 to destroy because
+Cloudflare changes from A to CNAME require replacement. The migration is now
+complete; a repeat plan should report no changes.
 
-### Check existing delegation before applying
+The domain's parent delegation was verified as Cloudflare's louis and meg
+nameservers. The existing AWS NS records were not deleted by this configuration.
 
-The user supplied four NS records at the apex pointing to AWS DNS. Cloudflare's
-API documents that NS records cannot coexist at the same name as other record
-types, so they may prevent this update. This configuration does not delete them.
+Keep the import block as migration history; it is ignored when the destination
+record already exists in state. Do not repeat its old import ID in a new state:
+that A record was deleted during replacement. Use this environment's existing
+S3 backend and workspace kubernetes.
 
-Verify actual registrar/parent delegation with dig +trace whatishenrylisteningto.com
-NS and compare it with the Cloudflare zone's assigned name servers. Inspect the
-zone before deciding whether these AWS NS records are obsolete. Do not delete
-delegation records or change registrar name servers merely to bypass an API error.
-Resolve any confirmed NS conflict before applying the apex cutover.
+Before retiring old hosting, verify the public site, live Spotify updates,
+Cloudflare Full (strict) TLS, and required OAuth redirect configuration.
+This PR records already-applied infrastructure; merging it does not deploy.
 
 References:
 - https://developers.cloudflare.com/dns/cname-flattening/
-- https://developers.cloudflare.com/api/resources/dns/subresources/records/methods/update/
-
-### Review and apply the DNS cutover
-
-After loading AWS credentials and cloudflare-login, from this directory:
-
-```bash
-terraform init
-terraform workspace select kubernetes
-terraform validate
-terraform plan
-```
-
-Because the certificate and validation record were already applied, expect
-1 to import, 0 to add, 1 to change, 0 to destroy. The apex record type changes
-A -> CNAME and its content changes from Render's IP to the ALB hostname.
-The existing k8s route and all NS records must remain unchanged. Review any
-different result before applying.
-
-```bash
-terraform apply
-terraform plan
-curl -fsS --max-time 15 https://whatishenrylisteningto.com/api/status
-```
-
-Verify Cloudflare uses Full (strict) TLS for the hostname, view the public site,
-and confirm live Spotify updates and any required OAuth redirect configuration
-before deleting the Render service. Keep Render running as a rollback origin
-until verification is complete.
-
-The import block remains as migration history and is ignored after the record
-is managed at its destination address. This code contains only public IDs and
-hostnames; Cloudflare API credentials still come from the environment.
-
-CI validates the configuration, but live DNS cutover and NS-record compatibility
-must be checked during provisioning.
