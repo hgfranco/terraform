@@ -13,3 +13,6 @@ personal_site_dns_enabled = true
 
 # Direct ALB HTTPS checks passed for /, /about/ and /healthz.
 personal_site_com_dns_enabled = true
+
+# Keep legacy DNS until the grouped ALB passes direct HTTPS checks.
+shared_alb_dns_enabled = false
