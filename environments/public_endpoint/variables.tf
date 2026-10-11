@@ -4,11 +4,6 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "hostname" {
-  description = "Public application hostname covered by the certificate."
-  type        = string
-}
-
 variable "cloudflare_zone_id" {
   description = "Cloudflare zone containing the hostname; this ID is not a credential."
   type        = string
@@ -24,26 +19,11 @@ variable "alb_hostname" {
   }
 }
 
-variable "existing_dns_record_id" {
-  description = "Existing Cloudflare DNS record ID to import, or null for a new hostname."
-  type        = string
-  default     = null
-
-  validation {
-    condition     = var.existing_dns_record_id == null ? true : can(regex("^[a-f0-9]{32}$", var.existing_dns_record_id))
-    error_message = "Provide the 32-character DNS record ID or null."
-  }
-}
-
 variable "public_hostnames" {
-  description = "Additional hostnames in this Cloudflare zone to prepare for ALB HTTPS."
+  description = "Application hostnames in this Cloudflare zone to prepare for ALB HTTPS."
   type        = set(string)
   default     = []
 
-  validation {
-    condition     = !contains(var.public_hostnames, var.hostname)
-    error_message = "The existing hostname already has its own certificate; list only additional hostnames."
-  }
 }
 
 variable "public_dns_record_ids" {
