@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Show month-to-date account costs using the current AWS CLI credentials.
+# Cost Explorer uses a global endpoint in us-east-1; no region filter is applied.
+if [[ $# -gt 0 ]]; then
+  if [[ $# -eq 1 && ( "$1" == "--help" || "$1" == "-h" ) ]]; then
+    printf 'Usage: ./spend\nShows month-to-date UnblendedCost by service and a combined total.\nUses your AWS CLI credentials, including AWS_PROFILE when set.\nCost Explorer data is delayed; each API request costs $0.01.\n'
+    exit 0
+  fi
+  printf 'Usage: ./spend\n' >&2
+  exit 2
+fi
+
+if ! command -v aws >/dev/null 2>&1; then
+  printf 'AWS CLI is required.\n' >&2
+  exit 1
+fi
+
+start_date=$(date -u +%Y-%m-01)
+# The API end date is exclusive. Support both macOS and GNU date.
+if end_date=$(date -u -v+1d +%Y-%m-%d 2>/dev/null); then
+  :
+else
+  end_date=$(date -u -d tomorrow +%Y-%m-%d)
+fi
+
+printf 'AWS month-to-date spend (UTC; billing data may be delayed)\n'
+costs=$(aws ce get-cost-and-usage \
+  --region us-east-1 \
+  --time-period "Start=$start_date,End=$end_date" \
+  --granularity MONTHLY \
+  --metrics UnblendedCost \
+  --group-by Type=DIMENSION,Key=SERVICE \
+  --query 'ResultsByTime[].Groups[].[Keys[0],Metrics.UnblendedCost.Amount,Metrics.UnblendedCost.Unit]' \
+  --output text \
+  --no-cli-pager)
+
+# AWS returns tab-separated service, amount, and currency columns.
+# Sum the service amounts locally instead of making a second billing request.
+printf '%s\n' "$costs" |
+  sort -t $'\t' -k2,2nr |
+  awk -F '\t' '
+    BEGIN { printf "\n%-60s %12s %s\n", "SERVICE", "COST", "CURRENCY" }
+    NF >= 3 {
+      amount = $2 + 0
+      totals[$3] += amount
+      displayed = sprintf("%.2f", amount)
+      if (displayed != "0.00" && displayed != "-0.00") {
+        printf "%-60s %12.2f %s\n", $1, amount, $3
+        shown++
+      }
+    }
+    END {
+      if (!shown) print "No service costs of at least one cent reported."
+      print ""
+      for (currency in totals)
+        printf "%-60s %12.2f %s\n", "TOTAL", totals[currency], currency
+    }
+  '
